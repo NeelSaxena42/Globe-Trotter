@@ -14,6 +14,22 @@ const TripDetails = () => {
     const [activeTab, setActiveTab] = useState('itinerary');
     const [showCitySearch, setShowCitySearch] = useState(false);
     const [showActivityModal, setShowActivityModal] = useState(null); // cityId
+    const [showCustomAddModal, setShowCustomAddModal] = useState(null); // cityId
+    const [customItemForm, setCustomItemForm] = useState({
+        name: '',
+        date: '',
+        duration: '',
+        description: '',
+        category: 'Activity',
+        cost: ''
+    });
+
+    const [showCityDateModal, setShowCityDateModal] = useState(false);
+    const [selectedCityToAdd, setSelectedCityToAdd] = useState(null);
+    const [cityDateForm, setCityDateForm] = useState({
+        arrivalDate: '',
+        departureDate: ''
+    });
 
     useEffect(() => {
         const foundTrip = getTrip(tripId);
@@ -27,14 +43,26 @@ const TripDetails = () => {
     if (!trip) return <div className="p-8 text-center">Loading trip...</div>;
 
     const handleAddCity = (city) => {
+        setSelectedCityToAdd(city);
+        setCityDateForm({
+            arrivalDate: trip.startDate,
+            departureDate: trip.endDate
+        });
+        setShowCityDateModal(true);
+        setShowCitySearch(false);
+    };
+
+    const confirmAddCity = () => {
+        if (!selectedCityToAdd || !cityDateForm.arrivalDate || !cityDateForm.departureDate) return;
+
         const newCityStop = {
             id: Date.now().toString(),
-            cityId: city.id,
-            cityName: city.name,
-            country: city.country,
-            image: city.image,
-            arrivalDate: trip.startDate, // Default to trip start
-            departureDate: trip.endDate, // Default to trip end
+            cityId: selectedCityToAdd.id,
+            cityName: selectedCityToAdd.name,
+            country: selectedCityToAdd.country,
+            image: selectedCityToAdd.image,
+            arrivalDate: cityDateForm.arrivalDate,
+            departureDate: cityDateForm.departureDate,
             activities: []
         };
 
@@ -45,7 +73,8 @@ const TripDetails = () => {
 
         setTrip(updatedTrip);
         updateTrip(updatedTrip);
-        setShowCitySearch(false);
+        setShowCityDateModal(false);
+        setSelectedCityToAdd(null);
     };
 
     const handleAddActivity = (cityId, activity) => {
@@ -53,7 +82,7 @@ const TripDetails = () => {
             if (city.id === cityId) {
                 return {
                     ...city,
-                    activities: [...(city.activities || []), { ...activity, uniqueId: Date.now().toString() }]
+                    activities: [...(city.activities || []), { ...activity, uniqueId: Date.now().toString(), type: 'activity', category: 'Activity' }]
                 };
             }
             return city;
@@ -63,6 +92,37 @@ const TripDetails = () => {
         setTrip(updatedTrip);
         updateTrip(updatedTrip);
         setShowActivityModal(null);
+    };
+
+    const handleAddCustomItem = (cityId) => {
+        if (!customItemForm.name) return;
+
+        const newItem = {
+            uniqueId: Date.now().toString(),
+            type: 'custom',
+            name: customItemForm.name,
+            date: customItemForm.date,
+            duration: customItemForm.duration,
+            description: customItemForm.description,
+            category: customItemForm.category,
+            cost: parseFloat(customItemForm.cost) || 0
+        };
+
+        const updatedCities = trip.cities.map(city => {
+            if (city.id === cityId) {
+                return {
+                    ...city,
+                    activities: [...(city.activities || []), newItem]
+                };
+            }
+            return city;
+        });
+
+        const updatedTrip = { ...trip, cities: updatedCities };
+        setTrip(updatedTrip);
+        updateTrip(updatedTrip);
+        setShowCustomAddModal(null);
+        setCustomItemForm({ name: '', date: '', duration: '', description: '', category: 'Activity', cost: '' });
     };
 
     const handleRemoveCity = (cityId) => {
@@ -76,16 +136,55 @@ const TripDetails = () => {
         }
     };
 
+    const handleRemoveActivity = (cityId, uniqueId) => {
+        const updatedCities = trip.cities.map(city => {
+            if (city.id === cityId) {
+                return {
+                    ...city,
+                    activities: city.activities.filter(a => a.uniqueId !== uniqueId)
+                };
+            }
+            return city;
+        });
+        const updatedTrip = { ...trip, cities: updatedCities };
+        setTrip(updatedTrip);
+        updateTrip(updatedTrip);
+    };
+
     const handleOnDragEnd = (result) => {
         if (!result.destination) return;
 
-        const items = Array.from(trip.cities);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
+        const { source, destination, type } = result;
 
-        const updatedTrip = { ...trip, cities: items };
-        setTrip(updatedTrip);
-        updateTrip(updatedTrip);
+        if (type === 'city') {
+            const items = Array.from(trip.cities);
+            const [reorderedItem] = items.splice(source.index, 1);
+            items.splice(destination.index, 0, reorderedItem);
+
+            const updatedTrip = { ...trip, cities: items };
+            setTrip(updatedTrip);
+            updateTrip(updatedTrip);
+        } else if (type === 'activity') {
+            // Extract cityId from droppableId "activities-{cityId}"
+            const sourceCityId = source.droppableId.replace('activities-', '');
+            const destCityId = destination.droppableId.replace('activities-', '');
+
+            // For now, only support reordering within the same city
+            if (sourceCityId !== destCityId) return;
+
+            const cityIndex = trip.cities.findIndex(c => c.id === sourceCityId);
+            const city = trip.cities[cityIndex];
+            const activities = Array.from(city.activities || []);
+            const [reorderedItem] = activities.splice(source.index, 1);
+            activities.splice(destination.index, 0, reorderedItem);
+
+            const updatedCities = [...trip.cities];
+            updatedCities[cityIndex] = { ...city, activities };
+
+            const updatedTrip = { ...trip, cities: updatedCities };
+            setTrip(updatedTrip);
+            updateTrip(updatedTrip);
+        }
     };
 
     return (
@@ -147,8 +246,157 @@ const TripDetails = () => {
                         </div>
                     )}
 
+                    {/* City Date Selection Modal */}
+                    {showCityDateModal && selectedCityToAdd && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-xl">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">When will you be in {selectedCityToAdd.name}?</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
+                                            <input
+                                                type="date"
+                                                min={trip.startDate}
+                                                max={trip.endDate}
+                                                value={cityDateForm.arrivalDate}
+                                                onChange={(e) => setCityDateForm({ ...cityDateForm, arrivalDate: e.target.value })}
+                                                className="w-full p-2 border border-gray-300 rounded focus:ring-primary focus:border-primary"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
+                                            <input
+                                                type="date"
+                                                min={cityDateForm.arrivalDate || trip.startDate}
+                                                max={trip.endDate}
+                                                value={cityDateForm.departureDate}
+                                                onChange={(e) => setCityDateForm({ ...cityDateForm, departureDate: e.target.value })}
+                                                className="w-full p-2 border border-gray-300 rounded focus:ring-primary focus:border-primary"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end space-x-3 mt-6">
+                                        <button
+                                            onClick={() => {
+                                                setShowCityDateModal(false);
+                                                setSelectedCityToAdd(null);
+                                            }}
+                                            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={confirmAddCity}
+                                            className="px-4 py-2 bg-primary text-white rounded hover:bg-blue-700"
+                                        >
+                                            Add City
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Custom Add Modal (Popup) */}
+                    {showCustomAddModal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="text-lg font-bold text-gray-900">Add Custom Item</h4>
+                                    <button onClick={() => setShowCustomAddModal(null)} className="text-gray-500 hover:text-gray-700">
+                                        <span className="sr-only">Close</span>
+                                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                                        <input
+                                            type="text"
+                                            value={customItemForm.name}
+                                            onChange={(e) => setCustomItemForm({ ...customItemForm, name: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-primary focus:border-primary"
+                                            placeholder="e.g., Lunch at Cafe"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                        <select
+                                            value={customItemForm.category}
+                                            onChange={(e) => setCustomItemForm({ ...customItemForm, category: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-primary focus:border-primary"
+                                        >
+                                            <option value="Activity">Activity</option>
+                                            <option value="Transport">Transport</option>
+                                            <option value="Food">Food</option>
+                                            <option value="Accommodation">Accommodation</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                        <input
+                                            type="date"
+                                            value={customItemForm.date}
+                                            onChange={(e) => setCustomItemForm({ ...customItemForm, date: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-primary focus:border-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Duration (hours)</label>
+                                        <input
+                                            type="number"
+                                            step="0.5"
+                                            value={customItemForm.duration}
+                                            onChange={(e) => setCustomItemForm({ ...customItemForm, duration: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-primary focus:border-primary"
+                                            placeholder="2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cost ($)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={customItemForm.cost}
+                                            onChange={(e) => setCustomItemForm({ ...customItemForm, cost: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-primary focus:border-primary"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Description / Notes</label>
+                                        <textarea
+                                            value={customItemForm.description}
+                                            onChange={(e) => setCustomItemForm({ ...customItemForm, description: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-primary focus:border-primary"
+                                            rows="3"
+                                            placeholder="Add details..."
+                                        ></textarea>
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex justify-end space-x-3">
+                                    <button
+                                        onClick={() => setShowCustomAddModal(null)}
+                                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => handleAddCustomItem(showCustomAddModal)}
+                                        className="px-4 py-2 bg-primary text-white text-sm font-medium rounded hover:bg-blue-700"
+                                    >
+                                        Add Item
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <DragDropContext onDragEnd={handleOnDragEnd}>
-                        <Droppable droppableId="cities">
+                        <Droppable droppableId="cities" type="city">
                             {(provided) => (
                                 <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
                                     {trip.cities?.map((city, index) => (
@@ -176,31 +424,74 @@ const TripDetails = () => {
                                                             </div>
 
                                                             {/* Activities */}
-                                                            <div className="mt-4 space-y-2">
-                                                                {city.activities?.map((activity, idx) => (
-                                                                    <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded text-sm">
-                                                                        <div className="flex items-center">
-                                                                            <span className="font-medium text-gray-900 mr-2">{activity.name}</span>
-                                                                            <span className="text-gray-500 text-xs px-2 py-0.5 bg-gray-200 rounded-full">{activity.type}</span>
-                                                                        </div>
-                                                                        <div className="flex items-center text-gray-500 space-x-3">
-                                                                            <span className="flex items-center"><ClockIcon className="h-3 w-3 mr-1" /> {activity.duration}h</span>
-                                                                            <span className="flex items-center"><CurrencyDollarIcon className="h-3 w-3 mr-1" /> {activity.cost}</span>
-                                                                        </div>
+                                                            <Droppable droppableId={`activities-${city.id}`} type="activity">
+                                                                {(provided) => (
+                                                                    <div
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.droppableProps}
+                                                                        className="mt-4 space-y-2"
+                                                                    >
+                                                                        {city.activities?.map((activity, idx) => (
+                                                                            <Draggable key={activity.uniqueId || idx} draggableId={activity.uniqueId || `${city.id}-activity-${idx}`} index={idx}>
+                                                                                {(provided) => (
+                                                                                    <div
+                                                                                        ref={provided.innerRef}
+                                                                                        {...provided.draggableProps}
+                                                                                        {...provided.dragHandleProps}
+                                                                                        className={`flex items-center justify-between p-3 rounded text-sm border ${activity.type === 'custom' ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}
+                                                                                    >
+                                                                                        <div className="flex items-center">
+                                                                                            {activity.type === 'custom' && (
+                                                                                                <span className="mr-2 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-200 rounded">Custom</span>
+                                                                                            )}
+                                                                                            <span className="font-medium text-gray-900 mr-2">{activity.name}</span>
+                                                                                            {activity.category && (
+                                                                                                <span className="text-gray-500 text-xs px-2 py-0.5 bg-gray-200 rounded-full mr-2">{activity.category}</span>
+                                                                                            )}
+                                                                                            {activity.type !== 'custom' && !activity.category && (
+                                                                                                <span className="text-gray-500 text-xs px-2 py-0.5 bg-gray-200 rounded-full">{activity.type}</span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="flex items-center text-gray-500 space-x-3">
+                                                                                            {activity.date && <span className="text-xs">{new Date(activity.date).toLocaleDateString()}</span>}
+                                                                                            <span className="flex items-center"><ClockIcon className="h-3 w-3 mr-1" /> {activity.duration}h</span>
+                                                                                            {activity.cost > 0 && <span className="flex items-center"><CurrencyDollarIcon className="h-3 w-3 mr-1" /> {activity.cost}</span>}
+                                                                                            <button onClick={() => handleRemoveActivity(city.id, activity.uniqueId)} className="text-gray-400 hover:text-red-500 ml-2">
+                                                                                                <TrashIcon className="h-4 w-4" />
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                            </Draggable>
+                                                                        ))}
+                                                                        {provided.placeholder}
                                                                     </div>
-                                                                ))}
+                                                                )}
+                                                            </Droppable>
+
+                                                            <div className="flex space-x-3 mt-3">
                                                                 <button
                                                                     onClick={() => setShowActivityModal(city.id)}
-                                                                    className="text-sm text-primary hover:text-blue-700 font-medium flex items-center mt-2"
+                                                                    className="text-sm text-primary hover:text-blue-700 font-medium flex items-center"
                                                                 >
                                                                     <PlusIcon className="h-4 w-4 mr-1" />
                                                                     Add Activity
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setShowCustomAddModal(city.id);
+                                                                        setCustomItemForm({ ...customItemForm, date: city.arrivalDate }); // Default date
+                                                                    }}
+                                                                    className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center"
+                                                                >
+                                                                    <PlusIcon className="h-4 w-4 mr-1" />
+                                                                    Custom Add
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    {/* Activity Search Modal (Inline for simplicity) */}
+                                                    {/* Activity Search Modal */}
                                                     {showActivityModal === city.id && (
                                                         <div className="p-4 border-t border-gray-100 bg-gray-50">
                                                             <div className="flex justify-between items-center mb-2">
@@ -210,6 +501,8 @@ const TripDetails = () => {
                                                             <ActivitySearch cityId={city.cityId} onAddActivity={(activity) => handleAddActivity(city.id, activity)} />
                                                         </div>
                                                     )}
+
+
                                                 </div>
                                             )}
                                         </Draggable>
