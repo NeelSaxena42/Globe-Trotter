@@ -27,6 +27,7 @@ const Navbar = () => {
                             <>
                                 <Link to="/dashboard" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Dashboard</Link>
                                 <Link to="/trips" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">My Trips</Link>
+                                <Link to="/itinerary/public/1" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Community Trips</Link>
                                 <Link to="/create-trip" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Plan Trip</Link>
                                 <div className="relative ml-3">
                                     <div className="flex items-center space-x-4">
@@ -70,6 +71,7 @@ const Navbar = () => {
                             <>
                                 <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Dashboard</Link>
                                 <Link to="/trips" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">My Trips</Link>
+                                <Link to="/itinerary/public/1" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Community Trips</Link>
                                 <Link to="/create-trip" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Plan Trip</Link>
                                 <Link to="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Profile</Link>
                                 <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-red-600 hover:bg-gray-50">Logout</button>
