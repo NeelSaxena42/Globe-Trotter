@@ -1,6 +1,35 @@
 @import "tailwindcss";
 
+@theme {
+  /* Premium Color Palette */
+  --color-primary: #007BFF;
+  --color-accent: #28A745;
+  --color-travel-blue: #0EA5E9;
+  --color-sunset: #F97316;
+  --color-forest: #10B981;
+  
+  /* Beautiful Typography */
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Outfit", system-ui, -apple-system, sans-serif;
+  
+  /* Refined Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+}
+
 body {
   background-color: rgb(249 250 251);
   color: rgb(17 24 39);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
