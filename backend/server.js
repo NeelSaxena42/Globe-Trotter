@@ -1,41 +1,63 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+
 const sequelize = require('./config/database');
-const models = require('./models');
+require('./models'); // ensure models are registered
+
+const authRoutes = require('./routes/auth');
+const tripRoutes = require('./routes/trips');
+const communityRoutes = require('./routes/community');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
-const authRoutes = require('./routes/auth');
-const tripRoutes = require('./routes/trips');
-const communityRoutes = require('./routes/community');
+app.get('/', (req, res) => {
+  res.send('Backend is running 🚀');
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', uptime: process.uptime() });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/community', communityRoutes);
 
-// Database Connection and Server Start
-const startServer = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Database connection has been established successfully.');
-        
-        // Sync models (force: false means it won't drop tables if they exist)
-        await sequelize.sync({ force: false });
-        console.log('Database synced.');
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    path: req.originalUrl,
+  });
+});
 
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
-    }
+const startServer = async () => {
+  try {
+    console.log('Connecting to database...');
+
+    await sequelize.authenticate();
+    console.log('✅ Database connected');
+
+    await sequelize.sync({ alter: false });
+    console.log('✅ Database synced');
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+
+  } catch (error) {
+    console.error('❌ Server startup failed:', error);
+    process.exit(1); // crash loudly if DB fails
+  }
 };
 
 startServer();
+
+/* -------------------- KEEP ALIVE (DEV ONLY) -------------------- */
+// Comment this out in production if you want
+setInterval(() => {
+  console.log('⏳ Server alive');
+}, 15000);
