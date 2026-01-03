@@ -243,7 +243,11 @@ const TripDetails = () => {
                     {showCitySearch && (
                         <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
                             <h3 className="text-sm font-medium text-gray-700 mb-2">Search for a city to add</h3>
-                            <CitySearch onAddCity={handleAddCity} />
+                            <CitySearch
+                                onAddCity={handleAddCity}
+                                tripPlace={trip.place}
+                                tripType={trip.placeType}
+                            />
                         </div>
                     )}
 

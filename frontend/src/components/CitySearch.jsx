@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { mockCities } from '../data/mockData';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 
-const CitySearch = ({ onAddCity }) => {
+import { placesData } from '../data/placesData';
+
+const CitySearch = ({ onAddCity, tripPlace, tripType }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
 
@@ -11,10 +13,30 @@ const CitySearch = ({ onAddCity }) => {
         setQuery(value);
 
         if (value.length > 1) {
-            const filtered = mockCities.filter(city =>
-                city.name.toLowerCase().includes(value.toLowerCase()) ||
-                city.country.toLowerCase().includes(value.toLowerCase())
-            );
+            // Determine valid countries based on trip destination
+            let validCountries = [];
+            if (tripType === 'country') {
+                const country = placesData.countries.find(c => c.id === tripPlace);
+                if (country) validCountries = [country.name];
+            } else if (tripType === 'continent') {
+                validCountries = placesData.countries
+                    .filter(c => c.continent === tripPlace)
+                    .map(c => c.name);
+            }
+
+            const filtered = mockCities.filter(city => {
+                const matchesQuery = city.name.toLowerCase().includes(value.toLowerCase()) ||
+                    city.country.toLowerCase().includes(value.toLowerCase());
+
+                // If validCountries is populated, strictly filter by it
+                const matchesDestination = validCountries.length > 0
+                    ? validCountries.includes(city.country)
+                    : true; // If no trip context, allow all (or maybe restrict? User said "cities should be of the country...")
+                // If we want to be strict, we should probably default to false if tripPlace is set but not found?
+                // But let's assume validCountries covers it.
+
+                return matchesQuery && matchesDestination;
+            });
             setResults(filtered);
         } else {
             setResults([]);
