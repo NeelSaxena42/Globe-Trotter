@@ -63,16 +63,16 @@ export const mockTrips = [
   {
     id: 't1',
     name: 'European Adventure',
-    startDate: '2024-06-01',
-    endDate: '2024-06-15',
+    startDate: '2026-01-01',
+    endDate: '2026-01-15',
     description: 'Two weeks in France and Italy.',
     coverImage: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80',
     cities: [
       {
         id: 's1',
         cityId: 'c1',
-        arrivalDate: '2024-06-01',
-        departureDate: '2024-06-05',
+        arrivalDate: '2026-01-01',
+        departureDate: '2026-01-05',
         activities: ['a1', 'a2'],
       }
     ]
