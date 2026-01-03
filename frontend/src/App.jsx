@@ -18,6 +18,7 @@ import MyTrips from './pages/MyTrips';
 import TripDetails from './pages/TripDetails';
 import AdminDashboard from './pages/AdminDashboard';
 import PublicTrip from './pages/PublicTrip';
+import Community from './pages/Community';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -77,6 +78,16 @@ function App() {
               <Route path="admin" element={
                 <ProtectedRoute>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="community" element={
+                <ProtectedRoute>
+                  <Community />
+                </ProtectedRoute>
+              } />
+              <Route path="community/:tripId" element={
+                <ProtectedRoute>
+                  <Community />
                 </ProtectedRoute>
               } />
             </Route>
