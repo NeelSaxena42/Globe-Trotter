@@ -2,16 +2,34 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { useLanguage } from '../context/LanguageContext';
-import { CalendarIcon, MapPinIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, MapPinIcon, TrashIcon, ShareIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const MyTrips = () => {
-    const { trips, deleteTrip } = useTrips();
+    const { trips, deleteTrip, shareToCommuity, unshareFromCommunity } = useTrips();
     const { t } = useLanguage();
 
     const handleDelete = (e, id) => {
         e.preventDefault(); // Prevent navigation
         if (window.confirm(t('deleteConfirm'))) {
             deleteTrip(id);
+        }
+    };
+
+    const handleShare = (e, trip) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (trip.isSharedToCommunity) {
+            if (window.confirm(t('removeSharedTrip'))) {
+                unshareFromCommunity(trip.id);
+            }
+        } else {
+            const success = shareToCommuity(trip.id);
+            if (success) {
+                alert(t('tripShared'));
+            } else {
+                alert(t('tripAlreadyShared'));
+            }
         }
     };
 
@@ -39,27 +57,49 @@ const MyTrips = () => {
             <div className="h-48 bg-gray-200 relative shrink-0">
                 <img src={trip.coverImage} alt={trip.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-gray-700">
-                    {Math.ceil((new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24))} Days
+                    {Math.ceil((new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24))} {t('days')}
                 </div>
+                {trip.isSharedToCommunity && (
+                    <div className="absolute top-2 left-2 bg-green-500/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-white flex items-center">
+                        <CheckCircleIcon className="h-3 w-3 mr-1" />
+                        {t('shared')}
+                    </div>
+                )}
             </div>
             <div className="p-4 flex flex-col flex-grow">
                 <div className="flex justify-between items-start">
                     <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{trip.name}</h3>
-                    <button
-                        onClick={(e) => handleDelete(e, trip.id)}
-                        className="text-gray-400 hover:text-red-500 p-1"
-                    >
-                        <TrashIcon className="h-5 w-5" />
-                    </button>
+                    <div className="flex items-center space-x-1">
+                        <button
+                            onClick={(e) => handleShare(e, trip)}
+                            className={`p-1 transition-colors ${trip.isSharedToCommunity ? 'text-green-500 hover:text-green-600' : 'text-gray-400 hover:text-primary'}`}
+                            title={trip.isSharedToCommunity ? t('removeFromCommunity') : t('shareToCommunity')}
+                        >
+                            <ShareIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                            onClick={(e) => handleDelete(e, trip.id)}
+                            className="text-gray-400 hover:text-red-500 p-1"
+                        >
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
                 <div className="flex items-center text-gray-500 text-sm mt-2">
                     <CalendarIcon className="h-4 w-4 mr-1" />
                     {new Date(trip.startDate).toLocaleDateString()} - {new Date(trip.endDate).toLocaleDateString()}
                 </div>
                 <p className="text-gray-600 text-sm mt-3 line-clamp-2 flex-grow">{trip.description}</p>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center text-sm text-gray-500">
-                    <MapPinIcon className="h-4 w-4 mr-1" />
-                    {trip.cities?.length || 0} Stops
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center">
+                        <MapPinIcon className="h-4 w-4 mr-1" />
+                        {trip.cities?.length || 0} {t('stops')}
+                    </div>
+                    {trip.savedFromCommunity && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            {t('fromCommunity')}
+                        </span>
+                    )}
                 </div>
             </div>
         </Link>
