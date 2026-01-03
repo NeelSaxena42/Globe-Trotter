@@ -1,43 +1,204 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useTrips } from '../context/TripContext';
-import { PhotoIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+
+// Places data with continents and countries
+const placesData = {
+    continents: [
+        { id: 'europe', name: 'Europe', type: 'continent' },
+        { id: 'asia', name: 'Asia', type: 'continent' },
+        { id: 'north-america', name: 'North America', type: 'continent' },
+        { id: 'south-america', name: 'South America', type: 'continent' },
+        { id: 'africa', name: 'Africa', type: 'continent' },
+        { id: 'oceania', name: 'Oceania', type: 'continent' },
+    ],
+    countries: [
+        // Europe
+        { id: 'france', name: 'France', continent: 'europe', type: 'country' },
+        { id: 'italy', name: 'Italy', continent: 'europe', type: 'country' },
+        { id: 'spain', name: 'Spain', continent: 'europe', type: 'country' },
+        { id: 'germany', name: 'Germany', continent: 'europe', type: 'country' },
+        { id: 'uk', name: 'United Kingdom', continent: 'europe', type: 'country' },
+        { id: 'greece', name: 'Greece', continent: 'europe', type: 'country' },
+        { id: 'switzerland', name: 'Switzerland', continent: 'europe', type: 'country' },
+        { id: 'netherlands', name: 'Netherlands', continent: 'europe', type: 'country' },
+        { id: 'portugal', name: 'Portugal', continent: 'europe', type: 'country' },
+        // Asia
+        { id: 'japan', name: 'Japan', continent: 'asia', type: 'country' },
+        { id: 'india', name: 'India', continent: 'asia', type: 'country' },
+        { id: 'thailand', name: 'Thailand', continent: 'asia', type: 'country' },
+        { id: 'china', name: 'China', continent: 'asia', type: 'country' },
+        { id: 'indonesia', name: 'Indonesia', continent: 'asia', type: 'country' },
+        { id: 'vietnam', name: 'Vietnam', continent: 'asia', type: 'country' },
+        { id: 'singapore', name: 'Singapore', continent: 'asia', type: 'country' },
+        { id: 'uae', name: 'UAE', continent: 'asia', type: 'country' },
+        { id: 'maldives', name: 'Maldives', continent: 'asia', type: 'country' },
+        // North America
+        { id: 'usa', name: 'United States', continent: 'north-america', type: 'country' },
+        { id: 'canada', name: 'Canada', continent: 'north-america', type: 'country' },
+        { id: 'mexico', name: 'Mexico', continent: 'north-america', type: 'country' },
+        // South America
+        { id: 'brazil', name: 'Brazil', continent: 'south-america', type: 'country' },
+        { id: 'argentina', name: 'Argentina', continent: 'south-america', type: 'country' },
+        { id: 'peru', name: 'Peru', continent: 'south-america', type: 'country' },
+        { id: 'chile', name: 'Chile', continent: 'south-america', type: 'country' },
+        // Africa
+        { id: 'egypt', name: 'Egypt', continent: 'africa', type: 'country' },
+        { id: 'south-africa', name: 'South Africa', continent: 'africa', type: 'country' },
+        { id: 'morocco', name: 'Morocco', continent: 'africa', type: 'country' },
+        { id: 'kenya', name: 'Kenya', continent: 'africa', type: 'country' },
+        // Oceania
+        { id: 'australia', name: 'Australia', continent: 'oceania', type: 'country' },
+        { id: 'new-zealand', name: 'New Zealand', continent: 'oceania', type: 'country' },
+        { id: 'fiji', name: 'Fiji', continent: 'oceania', type: 'country' },
+    ]
+};
+
+// Images mapped to places
+const placeImages = {
+    // Continents
+    'europe': 'https://images.unsplash.com/photo-1493707553966-283afac8c358?auto=format&fit=crop&w=1200&q=80',
+    'asia': 'https://images.unsplash.com/photo-1535139262971-c51845709a48?auto=format&fit=crop&w=1200&q=80',
+    'north-america': 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=1200&q=80',
+    'south-america': 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1200&q=80',
+    'africa': 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80',
+    'oceania': 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=1200&q=80',
+    // Countries
+    'france': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80',
+    'italy': 'https://images.unsplash.com/photo-1515859005217-8a1f08870f59?auto=format&fit=crop&w=1200&q=80',
+    'spain': 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=1200&q=80',
+    'germany': 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=80',
+    'uk': 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80',
+    'greece': 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=80',
+    'switzerland': 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80',
+    'netherlands': 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=1200&q=80',
+    'portugal': 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=1200&q=80',
+    'japan': 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80',
+    'india': 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80',
+    'thailand': 'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=1200&q=80',
+    'china': 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1200&q=80',
+    'indonesia': 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80',
+    'vietnam': 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+    'singapore': 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1200&q=80',
+    'uae': 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+    'maldives': 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=80',
+    'usa': 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=1200&q=80',
+    'canada': 'https://images.unsplash.com/photo-1517935706615-2717063c2225?auto=format&fit=crop&w=1200&q=80',
+    'mexico': 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?auto=format&fit=crop&w=1200&q=80',
+    'brazil': 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1200&q=80',
+    'argentina': 'https://images.unsplash.com/photo-1612294037637-ec328d0e075e?auto=format&fit=crop&w=1200&q=80',
+    'peru': 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1200&q=80',
+    'chile': 'https://images.unsplash.com/photo-1478827536114-da961b7f86d2?auto=format&fit=crop&w=1200&q=80',
+    'egypt': 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=1200&q=80',
+    'south-africa': 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=1200&q=80',
+    'morocco': 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?auto=format&fit=crop&w=1200&q=80',
+    'kenya': 'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?auto=format&fit=crop&w=1200&q=80',
+    'australia': 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=1200&q=80',
+    'new-zealand': 'https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=1200&q=80',
+    'fiji': 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=1200&q=80',
+};
+
+// Suggestions based on place
+const placeSuggestions = {
+    'europe': ['Visit historic castles', 'Try local cuisines', 'Explore museums', 'Take a river cruise'],
+    'asia': ['Visit ancient temples', 'Try street food', 'Explore night markets', 'Take a cooking class'],
+    'north-america': ['Visit national parks', 'Road trip adventures', 'City exploration', 'Beach getaways'],
+    'south-america': ['Explore rainforests', 'Visit ancient ruins', 'Dance salsa', 'Try local coffee'],
+    'africa': ['Safari adventures', 'Visit pyramids', 'Desert tours', 'Beach relaxation'],
+    'oceania': ['Great Barrier Reef', 'Hiking adventures', 'Beach hopping', 'Wildlife encounters'],
+    'france': ['Visit Eiffel Tower', 'Wine tasting in Bordeaux', 'Explore Louvre Museum', 'French Riviera beaches'],
+    'italy': ['Visit Colosseum', 'Venice gondola ride', 'Tuscan wine tour', 'Pizza making class'],
+    'spain': ['La Sagrada Familia', 'Flamenco show', 'Tapas tour', 'Beach in Barcelona'],
+    'germany': ['Visit Brandenburg Gate', 'Oktoberfest experience', 'Castle tours', 'Black Forest hiking'],
+    'uk': ['Tower of London', 'Stonehenge visit', 'Scottish Highlands', 'Afternoon tea'],
+    'greece': ['Santorini sunset', 'Acropolis tour', 'Island hopping', 'Greek food tour'],
+    'japan': ['Visit Mt. Fuji', 'Tokyo exploration', 'Kyoto temples', 'Cherry blossom viewing'],
+    'india': ['Taj Mahal visit', 'Kerala backwaters', 'Rajasthan palaces', 'Street food tour'],
+    'thailand': ['Bangkok temples', 'Phuket beaches', 'Thai cooking class', 'Elephant sanctuary'],
+    'usa': ['Grand Canyon', 'New York City tour', 'Las Vegas experience', 'California road trip'],
+    'australia': ['Sydney Opera House', 'Great Barrier Reef', 'Uluru visit', 'Wildlife safari'],
+};
 
 const CreateTrip = () => {
-    const [name, setName] = useState('');
+    const [selectedPlace, setSelectedPlace] = useState('');
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
-    const [description, setDescription] = useState('');
-    const [coverImage, setCoverImage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const { addTrip } = useTrips();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
+    // Get all places (continents + countries)
+    const allPlaces = useMemo(() => {
+        return [
+            ...placesData.continents,
+            ...placesData.countries
+        ];
+    }, []);
 
-        // Mock image upload or use a default if empty
-        const image = coverImage || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80';
+    // Get selected place details
+    const selectedPlaceDetails = useMemo(() => {
+        return allPlaces.find(p => p.id === selectedPlace);
+    }, [selectedPlace, allPlaces]);
+
+    // Get image based on selected place
+    const coverImage = useMemo(() => {
+        if (selectedPlace && placeImages[selectedPlace]) {
+            return placeImages[selectedPlace];
+        }
+        return 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80';
+    }, [selectedPlace]);
+
+    // Get suggestions based on selected place
+    const suggestions = useMemo(() => {
+        if (selectedPlace && placeSuggestions[selectedPlace]) {
+            return placeSuggestions[selectedPlace];
+        }
+        // If country selected, also check continent suggestions
+        if (selectedPlaceDetails?.continent && placeSuggestions[selectedPlaceDetails.continent]) {
+            return placeSuggestions[selectedPlaceDetails.continent];
+        }
+        return [];
+    }, [selectedPlace, selectedPlaceDetails]);
+
+    // Handle place selection - auto save trip
+    const handlePlaceSelect = (placeId) => {
+        setSelectedPlace(placeId);
+        setShowSuggestions(true);
+    };
+
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date) => {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    // Create trip when clicking on a suggestion or create button
+    const handleCreateTrip = () => {
+        if (!selectedPlace) return;
+
+        setLoading(true);
+        const placeName = selectedPlaceDetails?.name || 'New Trip';
 
         const newTrip = {
-            name,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            description,
-            coverImage: image,
+            name: `Trip to ${placeName}`,
+            startDate: formatDate(startDate),
+            endDate: formatDate(endDate),
+            description: `Exploring ${placeName}`,
+            coverImage: coverImage,
+            place: selectedPlace,
+            placeType: selectedPlaceDetails?.type,
             cities: []
         };
 
         addTrip(newTrip);
 
-        // Simulate delay
         setTimeout(() => {
             setLoading(false);
-            navigate('/trips'); // Or redirect to itinerary builder
+            navigate('/trips');
         }, 500);
     };
 
@@ -48,30 +209,110 @@ const CreateTrip = () => {
                     <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
                         Plan a New Trip
                     </h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Select a destination and we'll help you plan your perfect trip
+                    </p>
                 </div>
             </div>
 
             <div className="bg-white shadow sm:rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-6">
+                        {/* Place Selection Dropdown */}
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                Trip Name
+                            <label htmlFor="place" className="block text-sm font-medium text-gray-700">
+                                <GlobeAltIcon className="inline h-5 w-5 mr-1 text-blue-600" />
+                                Select Destination
                             </label>
                             <div className="mt-1">
-                                <input
-                                    type="text"
-                                    name="name"
-                                    id="name"
+                                <select
+                                    id="place"
+                                    name="place"
                                     required
-                                    className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md border p-2"
-                                    placeholder="e.g., Summer in Italy"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                />
+                                    value={selectedPlace}
+                                    onChange={(e) => handlePlaceSelect(e.target.value)}
+                                    className="shadow-sm focus:ring-blue-600 focus:border-blue-600 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                                >
+                                    <option value="">-- Select a destination --</option>
+                                    <optgroup label="🌍 Continents">
+                                        {placesData.continents.map((continent) => (
+                                            <option key={continent.id} value={continent.id}>
+                                                {continent.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🇪🇺 Europe">
+                                        {placesData.countries.filter(c => c.continent === 'europe').map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🌏 Asia">
+                                        {placesData.countries.filter(c => c.continent === 'asia').map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🌎 North America">
+                                        {placesData.countries.filter(c => c.continent === 'north-america').map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🌎 South America">
+                                        {placesData.countries.filter(c => c.continent === 'south-america').map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🌍 Africa">
+                                        {placesData.countries.filter(c => c.continent === 'africa').map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="🌏 Oceania">
+                                        {placesData.countries.filter(c => c.continent === 'oceania').map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                </select>
                             </div>
                         </div>
 
+                        {/* Cover Image Preview */}
+                        {selectedPlace && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Cover Image (Auto-selected based on destination)
+                                </label>
+                                <div className="relative rounded-lg overflow-hidden h-48">
+                                    <img
+                                        src={coverImage}
+                                        alt={selectedPlaceDetails?.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                                        <p className="text-white font-semibold flex items-center">
+                                            <MapPinIcon className="h-5 w-5 mr-1" />
+                                            {selectedPlaceDetails?.name}
+                                            <span className="ml-2 text-xs bg-blue-600 px-2 py-1 rounded-full">
+                                                {selectedPlaceDetails?.type}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Date Selection */}
                         <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
@@ -84,7 +325,7 @@ const CreateTrip = () => {
                                         selectsStart
                                         startDate={startDate}
                                         endDate={endDate}
-                                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                                        className="shadow-sm focus:ring-blue-600 focus:border-blue-600 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
                                     />
                                 </div>
                             </div>
@@ -101,67 +342,54 @@ const CreateTrip = () => {
                                         startDate={startDate}
                                         endDate={endDate}
                                         minDate={startDate}
-                                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                                        className="shadow-sm focus:ring-blue-600 focus:border-blue-600 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                                Description
-                            </label>
-                            <div className="mt-1">
-                                <textarea
-                                    id="description"
-                                    name="description"
-                                    rows={3}
-                                    className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md border p-2"
-                                    placeholder="Briefly describe your trip..."
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                />
+                        {/* Suggestions based on place */}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    ✨ Recommended Activities for {selectedPlaceDetails?.name}
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {suggestions.map((suggestion, index) => (
+                                        <div
+                                            key={index}
+                                            className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800 cursor-pointer hover:bg-blue-100 transition-colors"
+                                            onClick={handleCreateTrip}
+                                        >
+                                            {suggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Click on any suggestion to create your trip instantly!
+                                </p>
                             </div>
-                        </div>
+                        )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Cover Photo URL (Optional)</label>
-                            <div className="mt-1 flex rounded-md shadow-sm">
-                                <input
-                                    type="text"
-                                    name="coverImage"
-                                    id="coverImage"
-                                    className="focus:ring-primary focus:border-primary flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 border p-2"
-                                    placeholder="https://example.com/image.jpg"
-                                    value={coverImage}
-                                    onChange={(e) => setCoverImage(e.target.value)}
-                                />
-                                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                                    <PhotoIcon className="h-5 w-5" />
-                                </span>
-                            </div>
-                            <p className="mt-2 text-sm text-gray-500">
-                                Or leave blank for a random travel image.
-                            </p>
-                        </div>
-
-                        <div className="flex justify-end">
+                        {/* Action Buttons */}
+                        <div className="flex justify-end pt-4 border-t">
                             <button
                                 type="button"
                                 onClick={() => navigate('/dashboard')}
-                                className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-3"
+                                className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 mr-3"
                             >
                                 Cancel
                             </button>
                             <button
-                                type="submit"
-                                disabled={loading}
-                                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+                                type="button"
+                                onClick={handleCreateTrip}
+                                disabled={loading || !selectedPlace}
+                                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50"
                             >
                                 {loading ? 'Creating...' : 'Create Trip'}
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
