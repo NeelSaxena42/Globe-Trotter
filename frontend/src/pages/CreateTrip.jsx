@@ -3,59 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useTrips } from '../context/TripContext';
+import { useLanguage } from '../context/LanguageContext';
 import { MapPinIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { mockCities, mockActivities } from '../data/mockData';
 
-// Places data with continents and countries
-const placesData = {
-    continents: [
-        { id: 'europe', name: 'Europe', type: 'continent' },
-        { id: 'asia', name: 'Asia', type: 'continent' },
-        { id: 'north-america', name: 'North America', type: 'continent' },
-        { id: 'south-america', name: 'South America', type: 'continent' },
-        { id: 'africa', name: 'Africa', type: 'continent' },
-        { id: 'oceania', name: 'Oceania', type: 'continent' },
-    ],
-    countries: [
-        // Europe
-        { id: 'france', name: 'France', continent: 'europe', type: 'country' },
-        { id: 'italy', name: 'Italy', continent: 'europe', type: 'country' },
-        { id: 'spain', name: 'Spain', continent: 'europe', type: 'country' },
-        { id: 'germany', name: 'Germany', continent: 'europe', type: 'country' },
-        { id: 'uk', name: 'United Kingdom', continent: 'europe', type: 'country' },
-        { id: 'greece', name: 'Greece', continent: 'europe', type: 'country' },
-        { id: 'switzerland', name: 'Switzerland', continent: 'europe', type: 'country' },
-        { id: 'netherlands', name: 'Netherlands', continent: 'europe', type: 'country' },
-        { id: 'portugal', name: 'Portugal', continent: 'europe', type: 'country' },
-        // Asia
-        { id: 'japan', name: 'Japan', continent: 'asia', type: 'country' },
-        { id: 'india', name: 'India', continent: 'asia', type: 'country' },
-        { id: 'thailand', name: 'Thailand', continent: 'asia', type: 'country' },
-        { id: 'china', name: 'China', continent: 'asia', type: 'country' },
-        { id: 'indonesia', name: 'Indonesia', continent: 'asia', type: 'country' },
-        { id: 'vietnam', name: 'Vietnam', continent: 'asia', type: 'country' },
-        { id: 'singapore', name: 'Singapore', continent: 'asia', type: 'country' },
-        { id: 'uae', name: 'UAE', continent: 'asia', type: 'country' },
-        { id: 'maldives', name: 'Maldives', continent: 'asia', type: 'country' },
-        // North America
-        { id: 'usa', name: 'United States', continent: 'north-america', type: 'country' },
-        { id: 'canada', name: 'Canada', continent: 'north-america', type: 'country' },
-        { id: 'mexico', name: 'Mexico', continent: 'north-america', type: 'country' },
-        // South America
-        { id: 'brazil', name: 'Brazil', continent: 'south-america', type: 'country' },
-        { id: 'argentina', name: 'Argentina', continent: 'south-america', type: 'country' },
-        { id: 'peru', name: 'Peru', continent: 'south-america', type: 'country' },
-        { id: 'chile', name: 'Chile', continent: 'south-america', type: 'country' },
-        // Africa
-        { id: 'egypt', name: 'Egypt', continent: 'africa', type: 'country' },
-        { id: 'south-africa', name: 'South Africa', continent: 'africa', type: 'country' },
-        { id: 'morocco', name: 'Morocco', continent: 'africa', type: 'country' },
-        { id: 'kenya', name: 'Kenya', continent: 'africa', type: 'country' },
-        // Oceania
-        { id: 'australia', name: 'Australia', continent: 'oceania', type: 'country' },
-        { id: 'new-zealand', name: 'New Zealand', continent: 'oceania', type: 'country' },
-        { id: 'fiji', name: 'Fiji', continent: 'oceania', type: 'country' },
-    ]
-};
+import { placesData } from '../data/placesData';
 
 // Images mapped to places
 const placeImages = {
@@ -130,6 +82,7 @@ const CreateTrip = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
 
     const { addTrip } = useTrips();
+    const { t } = useLanguage();
     const navigate = useNavigate();
 
     // Get all places (continents + countries)
@@ -176,12 +129,68 @@ const CreateTrip = () => {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     };
 
+
+
     // Create trip when clicking on a suggestion or create button
     const handleCreateTrip = () => {
         if (!selectedPlace) return;
 
         setLoading(true);
         const placeName = selectedPlaceDetails?.name || 'New Trip';
+
+        // 1. Identify target countries based on selection
+        let targetCountries = [];
+        if (selectedPlaceDetails?.type === 'country') {
+            targetCountries = [selectedPlaceDetails.name];
+        } else if (selectedPlaceDetails?.type === 'continent') {
+            targetCountries = placesData.countries
+                .filter(c => c.continent === selectedPlace)
+                .map(c => c.name);
+        }
+
+        // 2. Find cities in those countries
+        const relevantCities = mockCities.filter(city => targetCountries.includes(city.country));
+
+        // 3. Create trip cities with activities
+        const tripCities = relevantCities.map((city, index) => {
+            // Simple date distribution (all same dates for now, or sequential if we want to be fancy)
+            // For MVP, let's just set them to the trip start/end to avoid gaps, 
+            // or maybe split the duration. Let's keep it simple: full duration for all (user can adjust)
+            // OR: Split duration equally.
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+            const daysPerCity = Math.max(1, Math.floor(totalDays / relevantCities.length));
+
+            const cityStart = new Date(start);
+            cityStart.setDate(start.getDate() + (index * daysPerCity));
+
+            const cityEnd = new Date(cityStart);
+            cityEnd.setDate(cityStart.getDate() + daysPerCity - 1); // -1 to not overlap too much? or just daysPerCity
+
+            // Clamp to trip end date
+            const finalCityEnd = cityEnd > end ? end : cityEnd;
+            const finalCityStart = cityStart > end ? end : cityStart;
+
+            // Find activities for this city
+            const cityActivities = mockActivities.filter(a => a.cityId === city.id).map(a => ({
+                ...a,
+                uniqueId: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                date: formatDate(finalCityStart), // Default to arrival date
+                category: a.type // Map type to category
+            }));
+
+            return {
+                id: Date.now().toString() + index,
+                cityId: city.id,
+                cityName: city.name,
+                country: city.country,
+                image: city.image,
+                arrivalDate: formatDate(finalCityStart),
+                departureDate: formatDate(finalCityEnd),
+                activities: cityActivities
+            };
+        });
 
         const newTrip = {
             name: `Trip to ${placeName}`,
@@ -191,7 +200,7 @@ const CreateTrip = () => {
             coverImage: coverImage,
             place: selectedPlace,
             placeType: selectedPlaceDetails?.type,
-            cities: []
+            cities: tripCities
         };
 
         addTrip(newTrip);
@@ -207,10 +216,10 @@ const CreateTrip = () => {
             <div className="md:flex md:items-center md:justify-between mb-8">
                 <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                        Plan a New Trip
+                        {t('planYourTrip')}
                     </h2>
                     <p className="mt-1 text-sm text-gray-500">
-                        Select a destination and we'll help you plan your perfect trip
+                        {t('whereToGo')}
                     </p>
                 </div>
             </div>
@@ -222,7 +231,7 @@ const CreateTrip = () => {
                         <div>
                             <label htmlFor="place" className="block text-sm font-medium text-gray-700">
                                 <GlobeAltIcon className="inline h-5 w-5 mr-1 text-blue-600" />
-                                Select Destination
+                                {t('selectDestination')}
                             </label>
                             <div className="mt-1">
                                 <select
@@ -233,8 +242,8 @@ const CreateTrip = () => {
                                     onChange={(e) => handlePlaceSelect(e.target.value)}
                                     className="shadow-sm focus:ring-blue-600 focus:border-blue-600 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
                                 >
-                                    <option value="">-- Select a destination --</option>
-                                    <optgroup label="🌍 Continents">
+                                    <option value="">-- {t('selectDestination')} --</option>
+                                    <optgroup label={`🌍 ${t('continents')}`}>
                                         {placesData.continents.map((continent) => (
                                             <option key={continent.id} value={continent.id}>
                                                 {continent.name}
@@ -316,7 +325,7 @@ const CreateTrip = () => {
                         <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
-                                    Start Date
+                                    {t('startDate')}
                                 </label>
                                 <div className="mt-1">
                                     <DatePicker
@@ -332,7 +341,7 @@ const CreateTrip = () => {
 
                             <div>
                                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
-                                    End Date
+                                    {t('endDate')}
                                 </label>
                                 <div className="mt-1">
                                     <DatePicker
@@ -352,7 +361,7 @@ const CreateTrip = () => {
                         {showSuggestions && suggestions.length > 0 && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    ✨ Recommended Activities for {selectedPlaceDetails?.name}
+                                    ✨ {t('tripSuggestions')} - {selectedPlaceDetails?.name}
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {suggestions.map((suggestion, index) => (
@@ -365,10 +374,13 @@ const CreateTrip = () => {
                                         </div>
                                     ))}
                                 </div>
-                                <p className="mt-2 text-xs text-gray-500">
-                                    Click on any suggestion to create your trip instantly!
-                                </p>
                             </div>
+                        )}
+
+                        {!selectedPlace && (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                                {t('selectPlaceFirst')}
+                            </p>
                         )}
 
                         {/* Action Buttons */}
@@ -386,7 +398,7 @@ const CreateTrip = () => {
                                 disabled={loading || !selectedPlace}
                                 className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50"
                             >
-                                {loading ? 'Creating...' : 'Create Trip'}
+                                {loading ? t('creating') : t('createTripBtn')}
                             </button>
                         </div>
                     </div>

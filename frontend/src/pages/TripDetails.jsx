@@ -6,6 +6,7 @@ import CitySearch from '../components/CitySearch';
 import ActivitySearch from '../components/ActivitySearch';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const TripDetails = () => {
     const { tripId } = useParams();
@@ -243,7 +244,11 @@ const TripDetails = () => {
                     {showCitySearch && (
                         <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
                             <h3 className="text-sm font-medium text-gray-700 mb-2">Search for a city to add</h3>
-                            <CitySearch onAddCity={handleAddCity} />
+                            <CitySearch
+                                onAddCity={handleAddCity}
+                                tripPlace={trip.place}
+                                tripType={trip.placeType}
+                            />
                         </div>
                     )}
 
@@ -527,17 +532,77 @@ const TripDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">Cost Breakdown</h3>
-                        <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                            <div className="text-center">
-                                <div className="inline-block p-4 rounded-full bg-blue-100 text-primary mb-2">
-                                    <CurrencyDollarIcon className="h-8 w-8" />
+                        {(() => {
+                            const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+                            const categories = ['Activity', 'Accommodation', 'Transport', 'Food'];
+
+                            const pieData = categories.map((category, index) => {
+                                const value = trip.cities?.reduce((total, city) => {
+                                    return total + (city.activities?.filter(a => (a.category || 'Activity') === category)
+                                        .reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0);
+                                }, 0) || 0;
+                                return { name: category, value, color: COLORS[index] };
+                            }).filter(item => item.value > 0);
+
+                            const totalCost = pieData.reduce((sum, item) => sum + item.value, 0);
+
+                            if (totalCost === 0) {
+                                return (
+                                    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                                        <div className="text-center">
+                                            <div className="inline-block p-4 rounded-full bg-blue-100 text-primary mb-2">
+                                                <CurrencyDollarIcon className="h-8 w-8" />
+                                            </div>
+                                            <p className="text-gray-500 text-sm">No expenses yet</p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-1">$0.00</p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="h-72">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={pieData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={90}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                                labelLine={false}
+                                            >
+                                                {pieData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip
+                                                formatter={(value) => [`$${value.toFixed(2)}`, '']}
+                                                contentStyle={{
+                                                    backgroundColor: 'white',
+                                                    border: '1px solid #e5e7eb',
+                                                    borderRadius: '8px',
+                                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                }}
+                                            />
+                                            <Legend
+                                                verticalAlign="bottom"
+                                                height={36}
+                                                formatter={(value) => (
+                                                    <span className="text-sm text-gray-600">{value}</span>
+                                                )}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="text-center -mt-4">
+                                        <p className="text-gray-500 text-sm">Total Trip Cost</p>
+                                        <p className="text-2xl font-bold text-gray-900">${totalCost.toFixed(2)}</p>
+                                    </div>
                                 </div>
-                                <p className="text-gray-500 text-sm">Total Trip Cost</p>
-                                <p className="text-3xl font-bold text-gray-900 mt-1">
-                                    ${trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0), 0).toFixed(2)}
-                                </p>
-                            </div>
-                        </div>
+                            );
+                        })()}
                     </div>
 
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">

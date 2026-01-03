@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
+import { useLanguage } from '../context/LanguageContext';
 import { CalendarIcon, MapPinIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const MyTrips = () => {
     const { trips, deleteTrip } = useTrips();
+    const { t } = useLanguage();
 
     const handleDelete = (e, id) => {
         e.preventDefault(); // Prevent navigation
-        if (window.confirm('Are you sure you want to delete this trip?')) {
+        if (window.confirm(t('deleteConfirm'))) {
             deleteTrip(id);
         }
     };
@@ -81,27 +83,27 @@ const MyTrips = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">My Trips</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-gray-900">{t('myTrips')}</h1>
                 <Link
                     to="/create-trip"
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
-                    Plan New Trip
+                    {t('planNewTrip')}
                 </Link>
             </div>
 
             {trips.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
                     <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No trips yet</h3>
-                    <p className="mt-1 text-sm text-gray-500">Get started by creating a new trip.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noTripsYet')}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{t('getStarted')}</p>
                     <div className="mt-6">
                         <Link
                             to="/create-trip"
                             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                         >
-                            Plan New Trip
+                            {t('planNewTrip')}
                         </Link>
                     </div>
                 </div>

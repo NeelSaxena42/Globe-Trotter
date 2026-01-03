@@ -49,11 +49,19 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('globeTrotterUser');
     };
 
+    const updateUser = (updates) => {
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('globeTrotterUser', JSON.stringify(updatedUser));
+        return updatedUser;
+    };
+
     const value = {
         user,
         login,
         signup,
         logout,
+        updateUser,
         loading
     };
 
