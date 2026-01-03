@@ -27,6 +27,7 @@ const Navbar = () => {
                     <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-8">
                         {user ? (
                             <>
+                                <Link to="/itinerary/public/1" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Community Trips</Link>
                                 <Link to="/dashboard" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">{t('dashboard')}</Link>
                                 <Link to="/trips" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">{t('myTrips')}</Link>
                                 <Link to="/create-trip" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">{t('createTrip')}</Link>
@@ -70,6 +71,7 @@ const Navbar = () => {
                     <div className="pt-2 pb-3 space-y-1">
                         {user ? (
                             <>
+                                <Link to="/itinerary/public/1" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Community Trips</Link>
                                 <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('dashboard')}</Link>
                                 <Link to="/trips" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('myTrips')}</Link>
                                 <Link to="/create-trip" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('createTrip')}</Link>

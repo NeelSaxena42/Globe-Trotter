@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { TripProvider } from './context/TripContext';
 import { LanguageProvider } from './context/LanguageContext';
 import MainLayout from './layouts/MainLayout';
+import PublicItinerary from "./pages/PublicItinerary";
+
 
 // Pages
 import Login from './pages/Login';
@@ -40,6 +42,10 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/share/:tripId" element={<PublicTrip />} />
             <Route path="/" element={<MainLayout />}>
+              <Route
+                  path="/itinerary/public/:id"
+                  element={<PublicItinerary />}
+              />
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={
                 <ProtectedRoute>
