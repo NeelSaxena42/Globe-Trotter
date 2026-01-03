@@ -7,10 +7,12 @@ import ActivitySearch from '../components/ActivitySearch';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useSettings } from '../context/SettingsContext';
 
 const TripDetails = () => {
     const { tripId } = useParams();
     const { getTrip, updateTrip } = useTrips();
+    const { currency, setCurrency, availableCurrencies, formatCurrency } = useSettings();
     const navigate = useNavigate();
     const [trip, setTrip] = useState(null);
     const [activeTab, setActiveTab] = useState('itinerary');
@@ -531,7 +533,18 @@ const TripDetails = () => {
             {activeTab === 'budget' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Cost Breakdown</h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-gray-900">Cost Breakdown</h3>
+                            <select
+                                value={currency}
+                                onChange={(e) => setCurrency(e.target.value)}
+                                className="block w-24 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                            >
+                                {availableCurrencies.map((curr) => (
+                                    <option key={curr} value={curr}>{curr}</option>
+                                ))}
+                            </select>
+                        </div>
                         {(() => {
                             const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
                             const categories = ['Activity', 'Accommodation', 'Transport', 'Food'];
@@ -554,7 +567,7 @@ const TripDetails = () => {
                                                 <CurrencyDollarIcon className="h-8 w-8" />
                                             </div>
                                             <p className="text-gray-500 text-sm">No expenses yet</p>
-                                            <p className="text-3xl font-bold text-gray-900 mt-1">$0.00</p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(0)}</p>
                                         </div>
                                     </div>
                                 );
@@ -579,7 +592,7 @@ const TripDetails = () => {
                                                 ))}
                                             </Pie>
                                             <Tooltip
-                                                formatter={(value) => [`$${value.toFixed(2)}`, '']}
+                                                formatter={(value) => [formatCurrency(value), '']}
                                                 contentStyle={{
                                                     backgroundColor: 'white',
                                                     border: '1px solid #e5e7eb',
@@ -598,7 +611,7 @@ const TripDetails = () => {
                                     </ResponsiveContainer>
                                     <div className="text-center -mt-4">
                                         <p className="text-gray-500 text-sm">Total Trip Cost</p>
-                                        <p className="text-2xl font-bold text-gray-900">${totalCost.toFixed(2)}</p>
+                                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
                                     </div>
                                 </div>
                             );
@@ -617,7 +630,7 @@ const TripDetails = () => {
                                 return (
                                     <div key={category} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                         <span className="text-gray-600">{category}</span>
-                                        <span className="font-bold text-gray-900">${categoryCost?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-bold text-gray-900">{formatCurrency(categoryCost || 0)}</span>
                                     </div>
                                 );
                             })}
@@ -625,7 +638,7 @@ const TripDetails = () => {
                             <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
                                 <span className="text-lg font-bold text-gray-900">Total</span>
                                 <span className="text-xl font-bold text-primary">
-                                    ${trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0), 0).toFixed(2)}
+                                    {formatCurrency(trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0), 0))}
                                 </span>
                             </div>
                         </div>
@@ -637,7 +650,7 @@ const TripDetails = () => {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Trip Timeline</h3>
                     <div className="relative border-l-2 border-gray-200 ml-3 space-y-8">
-                        {trip.cities?.map((city, index) => (
+                        {trip.cities?.map((city) => (
                             <div key={city.id} className="relative pl-8">
                                 <div className="absolute -left-2.5 top-0 h-5 w-5 rounded-full border-4 border-white bg-primary"></div>
                                 <div className="mb-1 text-sm text-primary font-bold">
@@ -653,7 +666,7 @@ const TripDetails = () => {
                                                 <span className="ml-2 text-xs text-gray-400">({activity.duration}h)</span>
                                             </div>
                                             {activity.cost > 0 && (
-                                                <span className="font-medium text-gray-900">${parseFloat(activity.cost).toFixed(2)}</span>
+                                                <span className="font-medium text-gray-900">{formatCurrency(activity.cost)}</span>
                                             )}
                                         </div>
                                     ))}
