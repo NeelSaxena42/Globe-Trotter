@@ -5,6 +5,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import CitySearch from '../components/CitySearch';
 import ActivitySearch from '../components/ActivitySearch';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { formatDate } from '../utils/dateUtils';
 
 const TripDetails = () => {
     const { tripId } = useParams();
@@ -531,8 +532,10 @@ const TripDetails = () => {
                                 <div className="inline-block p-4 rounded-full bg-blue-100 text-primary mb-2">
                                     <CurrencyDollarIcon className="h-8 w-8" />
                                 </div>
-                                <p className="text-gray-500 text-sm">Chart visualization would go here.</p>
-                                <p className="text-xs text-gray-400">(Requires Recharts implementation)</p>
+                                <p className="text-gray-500 text-sm">Total Trip Cost</p>
+                                <p className="text-3xl font-bold text-gray-900 mt-1">
+                                    ${trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0), 0).toFixed(2)}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -540,28 +543,24 @@ const TripDetails = () => {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">Estimated Expenses</h3>
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="text-gray-600">Activities</span>
-                                <span className="font-bold text-gray-900">
-                                    ${trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + a.cost, 0) || 0), 0)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="text-gray-600">Accommodation (Est.)</span>
-                                <span className="font-bold text-gray-900">$1,200</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="text-gray-600">Transport (Est.)</span>
-                                <span className="font-bold text-gray-900">$800</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="text-gray-600">Food (Est.)</span>
-                                <span className="font-bold text-gray-900">$600</span>
-                            </div>
+                            {['Activity', 'Accommodation', 'Transport', 'Food'].map(category => {
+                                const categoryCost = trip.cities?.reduce((total, city) => {
+                                    return total + (city.activities?.filter(a => (a.category || 'Activity') === category)
+                                        .reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0);
+                                }, 0);
+
+                                return (
+                                    <div key={category} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span className="text-gray-600">{category}</span>
+                                        <span className="font-bold text-gray-900">${categoryCost?.toFixed(2) || '0.00'}</span>
+                                    </div>
+                                );
+                            })}
+
                             <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
                                 <span className="text-lg font-bold text-gray-900">Total</span>
                                 <span className="text-xl font-bold text-primary">
-                                    ${trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + a.cost, 0) || 0), 0) + 2600}
+                                    ${trip.cities?.reduce((total, city) => total + (city.activities?.reduce((sum, a) => sum + (parseFloat(a.cost) || 0), 0) || 0), 0).toFixed(2)}
                                 </span>
                             </div>
                         </div>
@@ -577,14 +576,20 @@ const TripDetails = () => {
                             <div key={city.id} className="relative pl-8">
                                 <div className="absolute -left-2.5 top-0 h-5 w-5 rounded-full border-4 border-white bg-primary"></div>
                                 <div className="mb-1 text-sm text-primary font-bold">
-                                    {new Date(city.arrivalDate).toLocaleDateString()} - {new Date(city.departureDate).toLocaleDateString()}
+                                    {formatDate(city.arrivalDate)} - {formatDate(city.departureDate)}
                                 </div>
                                 <h4 className="text-lg font-bold text-gray-900">{city.cityName}, {city.country}</h4>
                                 <div className="mt-2 space-y-2">
                                     {city.activities?.map((activity, idx) => (
-                                        <div key={idx} className="flex items-center text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                                            <ClockIcon className="h-4 w-4 mr-2 text-gray-400" />
-                                            {activity.name} ({activity.duration}h)
+                                        <div key={idx} className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                                            <div className="flex items-center">
+                                                <ClockIcon className="h-4 w-4 mr-2 text-gray-400" />
+                                                <span className="font-medium">{activity.name}</span>
+                                                <span className="ml-2 text-xs text-gray-400">({activity.duration}h)</span>
+                                            </div>
+                                            {activity.cost > 0 && (
+                                                <span className="font-medium text-gray-900">${parseFloat(activity.cost).toFixed(2)}</span>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
