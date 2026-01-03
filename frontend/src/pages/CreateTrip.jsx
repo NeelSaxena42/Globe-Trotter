@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useTrips } from '../context/TripContext';
+import { useLanguage } from '../context/LanguageContext';
 import { MapPinIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 
 // Places data with continents and countries
@@ -130,6 +131,7 @@ const CreateTrip = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
 
     const { addTrip } = useTrips();
+    const { t } = useLanguage();
     const navigate = useNavigate();
 
     // Get all places (continents + countries)
@@ -207,10 +209,10 @@ const CreateTrip = () => {
             <div className="md:flex md:items-center md:justify-between mb-8">
                 <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                        Plan a New Trip
+                        {t('planYourTrip')}
                     </h2>
                     <p className="mt-1 text-sm text-gray-500">
-                        Select a destination and we'll help you plan your perfect trip
+                        {t('whereToGo')}
                     </p>
                 </div>
             </div>
@@ -222,7 +224,7 @@ const CreateTrip = () => {
                         <div>
                             <label htmlFor="place" className="block text-sm font-medium text-gray-700">
                                 <GlobeAltIcon className="inline h-5 w-5 mr-1 text-blue-600" />
-                                Select Destination
+                                {t('selectDestination')}
                             </label>
                             <div className="mt-1">
                                 <select
@@ -233,8 +235,8 @@ const CreateTrip = () => {
                                     onChange={(e) => handlePlaceSelect(e.target.value)}
                                     className="shadow-sm focus:ring-blue-600 focus:border-blue-600 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
                                 >
-                                    <option value="">-- Select a destination --</option>
-                                    <optgroup label="🌍 Continents">
+                                    <option value="">-- {t('selectDestination')} --</option>
+                                    <optgroup label={`🌍 ${t('continents')}`}>
                                         {placesData.continents.map((continent) => (
                                             <option key={continent.id} value={continent.id}>
                                                 {continent.name}
@@ -316,7 +318,7 @@ const CreateTrip = () => {
                         <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
-                                    Start Date
+                                    {t('startDate')}
                                 </label>
                                 <div className="mt-1">
                                     <DatePicker
@@ -332,7 +334,7 @@ const CreateTrip = () => {
 
                             <div>
                                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
-                                    End Date
+                                    {t('endDate')}
                                 </label>
                                 <div className="mt-1">
                                     <DatePicker
@@ -352,7 +354,7 @@ const CreateTrip = () => {
                         {showSuggestions && suggestions.length > 0 && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    ✨ Recommended Activities for {selectedPlaceDetails?.name}
+                                    ✨ {t('tripSuggestions')} - {selectedPlaceDetails?.name}
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {suggestions.map((suggestion, index) => (
@@ -365,10 +367,13 @@ const CreateTrip = () => {
                                         </div>
                                     ))}
                                 </div>
-                                <p className="mt-2 text-xs text-gray-500">
-                                    Click on any suggestion to create your trip instantly!
-                                </p>
                             </div>
+                        )}
+
+                        {!selectedPlace && (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                                {t('selectPlaceFirst')}
+                            </p>
                         )}
 
                         {/* Action Buttons */}
@@ -386,7 +391,7 @@ const CreateTrip = () => {
                                 disabled={loading || !selectedPlace}
                                 className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50"
                             >
-                                {loading ? 'Creating...' : 'Create Trip'}
+                                {loading ? t('creating') : t('createTripBtn')}
                             </button>
                         </div>
                     </div>

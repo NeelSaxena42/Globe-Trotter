@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
+import { useLanguage } from '../context/LanguageContext';
 import { CalendarIcon, MapPinIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const MyTrips = () => {
     const { trips, deleteTrip } = useTrips();
+    const { t } = useLanguage();
 
     const handleDelete = (e, id) => {
         e.preventDefault(); // Prevent navigation
-        if (window.confirm('Are you sure you want to delete this trip?')) {
+        if (window.confirm(t('deleteConfirm'))) {
             deleteTrip(id);
         }
     };
@@ -16,12 +18,12 @@ const MyTrips = () => {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">My Trips</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{t('myTrips')}</h1>
                 <Link
                     to="/create-trip"
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
-                    Plan New Trip
+                    {t('planNewTrip')}
                 </Link>
             </div>
 
@@ -32,7 +34,7 @@ const MyTrips = () => {
                             <div className="h-48 bg-gray-200 relative shrink-0">
                                 <img src={trip.coverImage} alt={trip.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-gray-700">
-                                    {Math.ceil((new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24))} Days
+                                    {Math.ceil((new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24))} {t('days')}
                                 </div>
                             </div>
                             <div className="p-4 flex flex-col flex-grow">
@@ -52,7 +54,7 @@ const MyTrips = () => {
                                 <p className="text-gray-600 text-sm mt-3 line-clamp-2 flex-grow">{trip.description}</p>
                                 <div className="mt-4 pt-4 border-t border-gray-100 flex items-center text-sm text-gray-500">
                                     <MapPinIcon className="h-4 w-4 mr-1" />
-                                    {trip.cities?.length || 0} Stops
+                                    {trip.cities?.length || 0} {t('stops')}
                                 </div>
                             </div>
                         </Link>
@@ -61,14 +63,14 @@ const MyTrips = () => {
             ) : (
                 <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
                     <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No trips yet</h3>
-                    <p className="mt-1 text-sm text-gray-500">Get started by creating a new trip.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noTripsYet')}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{t('getStarted')}</p>
                     <div className="mt-6">
                         <Link
                             to="/create-trip"
                             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                         >
-                            Plan New Trip
+                            {t('planNewTrip')}
                         </Link>
                     </div>
                 </div>
