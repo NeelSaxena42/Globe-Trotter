@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Bars3Icon, XMarkIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -25,9 +27,9 @@ const Navbar = () => {
                     <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-8">
                         {user ? (
                             <>
-                                <Link to="/dashboard" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Dashboard</Link>
-                                <Link to="/trips" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">My Trips</Link>
-                                <Link to="/create-trip" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Plan Trip</Link>
+                                <Link to="/dashboard" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">{t('dashboard')}</Link>
+                                <Link to="/trips" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">{t('myTrips')}</Link>
+                                <Link to="/create-trip" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">{t('createTrip')}</Link>
                                 <div className="relative ml-3">
                                     <div className="flex items-center space-x-4">
                                         <Link to="/profile" className="flex items-center text-gray-700 hover:text-primary">
@@ -38,12 +40,12 @@ const Navbar = () => {
                                             )}
                                             <span className="ml-2 text-sm font-medium">{user.name}</span>
                                         </Link>
-                                        <button onClick={handleLogout} className="text-gray-500 hover:text-red-600 text-sm font-medium">Logout</button>
+                                        <button onClick={handleLogout} className="text-gray-500 hover:text-red-600 text-sm font-medium">{t('logout')}</button>
                                     </div>
                                 </div>
                             </>
                         ) : (
-                            <Link to="/login" className="text-primary hover:text-blue-700 font-medium">Login / Signup</Link>
+                            <Link to="/login" className="text-primary hover:text-blue-700 font-medium">{t('login')} / {t('register')}</Link>
                         )}
                     </div>
                     <div className="-mr-2 flex items-center sm:hidden">
@@ -68,14 +70,14 @@ const Navbar = () => {
                     <div className="pt-2 pb-3 space-y-1">
                         {user ? (
                             <>
-                                <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Dashboard</Link>
-                                <Link to="/trips" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">My Trips</Link>
-                                <Link to="/create-trip" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Plan Trip</Link>
-                                <Link to="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Profile</Link>
-                                <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-red-600 hover:bg-gray-50">Logout</button>
+                                <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('dashboard')}</Link>
+                                <Link to="/trips" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('myTrips')}</Link>
+                                <Link to="/create-trip" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('createTrip')}</Link>
+                                <Link to="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('profile')}</Link>
+                                <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-red-600 hover:bg-gray-50">{t('logout')}</button>
                             </>
                         ) : (
-                            <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Login</Link>
+                            <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">{t('login')}</Link>
                         )}
                     </div>
                 </div>
